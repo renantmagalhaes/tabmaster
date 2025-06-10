@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <link
+      rel="stylesheet"
+      type="text/css"
+      href="styles.css"
+    />
+
+    <script src="fuse.min.js"></script>
+  </head>
+
+  <body>
+    <div id="overlay">
+      <div id="content">
+        <input
+          type="text"
+          id="search"
+          placeholder="Search tabs and bookmarks"
+        />
+
+        <div id="results">
+          <h3>Open Tabs</h3>
+
+          <ul id="tabs"></ul>
+
+          <h3>Bookmarks</h3>
+
+          <ul id="bookmarks"></ul>
+
+          <h3>History</h3>
+
+          <ul id="history"></ul>
+
+          <h3>Recently Closed</h3>
+
+          <ul id="closed-tabs"></ul>
+        </div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

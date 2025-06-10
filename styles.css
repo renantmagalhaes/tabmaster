@@ -1,0 +1,89 @@
+html, body {
+  width: 600px;
+  height: auto;
+  min-height: 100px;
+  overflow: hidden;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  background-color: #333;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+
+
+#overlay {
+  width: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+#search {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 5px;
+  border: none;
+  font-size: 16px;
+  background-color: #444;
+  color: #fff;
+  box-sizing: border-box;
+}
+
+#results {
+  max-height: 400px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+/* Enhanced sticky section headers */
+#results h3 {
+  padding: 8px 10px;
+  font-size: 14px;
+  font-weight: bold;
+  color: #00bcd4;
+  background-color: #2a2a2a;
+  border-left: 4px solid #00bcd4;
+  margin-top: 20px;
+  margin-bottom: 5px;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0 0 10px 0;
+}
+
+li {
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  transition: background-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+li img {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
+li:hover,
+li.active {
+  background-color: #555;
+  border-radius: 5px;
+}
+
+span {
+  color: #fff;
+  font-size: 14px;
+  overflow-wrap: break-word;
+}
