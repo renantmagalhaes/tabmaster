@@ -8,7 +8,8 @@
     "bookmarks",
     "history",
     "sessions",
-    "search"
+    "search",
+    "storage"
   ],
   "action": {
     "default_popup": "popup.html"

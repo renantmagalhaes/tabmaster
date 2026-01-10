@@ -229,4 +229,152 @@ document.addEventListener('DOMContentLoaded', function() {
       return !/\s/.test(string) && /\./.test(string) && !/^\./.test(string) && !/\.$/.test(string);
     }
   }
+  function isUrl(string) {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return !/\s/.test(string) && /\./.test(string) && !/^\./.test(string) && !/\.$/.test(string);
+    }
+  }
+
+  // --- Settings Logic ---
+  const settingsBtn = document.getElementById('settings-btn');
+  const settingsPanel = document.getElementById('settings-panel');
+  const btnReset = document.getElementById('btn-reset');
+  const btnSave = document.getElementById('btn-save');
+
+  const inputs = {
+    popupWidth: document.getElementById('set-width'),
+    popupHeight: document.getElementById('set-height'),
+    fuzziness: document.getElementById('set-fuzziness'),
+    bgColor: document.getElementById('set-bg-color'),
+    textColor: document.getElementById('set-text-color'),
+    accentColor: document.getElementById('set-accent-color'),
+    itemBgColor: document.getElementById('set-item-bg-color')
+  };
+
+  const displays = {
+    popupWidth: document.getElementById('val-width'),
+    popupHeight: document.getElementById('val-height'),
+    fuzziness: document.getElementById('val-fuzziness')
+  };
+
+  const defaultSettings = {
+    popupWidth: 600,
+    popupHeight: 400,
+    fuzziness: 0.3,
+    bgColor: '#333333',
+    textColor: '#ffffff',
+    accentColor: '#00bcd4',
+    itemBgColor: '#444444'
+  };
+
+  // Toggle Panel
+  settingsBtn.addEventListener('click', () => {
+    settingsPanel.classList.toggle('open');
+  });
+
+  // Load Settings
+  chrome.storage.sync.get(defaultSettings, (settings) => {
+    applySettings(settings);
+    updateInputs(settings);
+  });
+
+  // Apply Changes Live (Preview)
+  Object.keys(inputs).forEach(key => {
+    // 1. Live Preview on 'input'
+    inputs[key].addEventListener('input', (e) => {
+      const value = e.target.value;
+      
+      // Update display text
+      if (displays[key]) {
+        displays[key].textContent = value + (key.includes('fuzziness') ? '' : 'px');
+      }
+      
+      // Apply visually (CSS or runtime options)
+      const previewSettings = {};
+      if (key === 'popupWidth' || key === 'popupHeight') {
+        previewSettings[key] = parseInt(value);
+      } else if (key === 'fuzziness') {
+        previewSettings[key] = parseFloat(value);
+      } else {
+        previewSettings[key] = value;
+      }
+      
+      applySettings(previewSettings);
+
+      // Re-init Fuse if fuzziness changed (for live search preview)
+      if (key === 'fuzziness') {
+        options.threshold = parseFloat(value);
+        fuseTabs.options.threshold = options.threshold;
+        fuseBookmarks.options.threshold = options.threshold;
+        fuseHistory.options.threshold = options.threshold;
+        fuseClosedTabs.options.threshold = options.threshold;
+        
+        if (searchInput.value) filterResults(searchInput.value);
+      }
+    });
+
+    // 2. Save on 'change' (Commit) - Prevents Quota Error
+    inputs[key].addEventListener('change', (e) => {
+      const value = e.target.value;
+      const newSettings = {};
+      
+      if (key === 'popupWidth' || key === 'popupHeight') {
+        newSettings[key] = parseInt(value);
+      } else if (key === 'fuzziness') {
+        newSettings[key] = parseFloat(value);
+      } else {
+        newSettings[key] = value;
+      }
+
+      chrome.storage.sync.set(newSettings);
+    });
+  });
+
+  // Save (Close)
+  btnSave.addEventListener('click', () => {
+    settingsPanel.classList.remove('open');
+  });
+
+  // Reset
+  btnReset.addEventListener('click', () => {
+    chrome.storage.sync.set(defaultSettings, () => {
+      applySettings(defaultSettings);
+      updateInputs(defaultSettings);
+    });
+  });
+
+  function applySettings(s) {
+    const root = document.documentElement;
+    if (s.popupWidth) root.style.setProperty('--popup-width', s.popupWidth + 'px');
+    if (s.popupHeight) root.style.setProperty('--popup-height', s.popupHeight + 'px');
+    if (s.bgColor) root.style.setProperty('--bg-color', s.bgColor);
+    if (s.textColor) root.style.setProperty('--text-color', s.textColor);
+    if (s.accentColor) root.style.setProperty('--accent-color', s.accentColor);
+    if (s.itemBgColor) root.style.setProperty('--item-bg-color', s.itemBgColor);
+    
+    if (s.fuzziness !== undefined) {
+      options.threshold = s.fuzziness;
+    }
+  }
+
+  function updateInputs(s) {
+    inputs.popupWidth.value = s.popupWidth;
+    displays.popupWidth.textContent = s.popupWidth + 'px';
+    
+    if (s.popupHeight) {
+      inputs.popupHeight.value = s.popupHeight;
+      displays.popupHeight.textContent = s.popupHeight + 'px';
+    }
+
+    inputs.fuzziness.value = s.fuzziness;
+    displays.fuzziness.textContent = s.fuzziness;
+    
+    inputs.bgColor.value = s.bgColor;
+    inputs.textColor.value = s.textColor;
+    inputs.accentColor.value = s.accentColor;
+    inputs.itemBgColor.value = s.itemBgColor;
+  }
 });
