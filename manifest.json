@@ -1,13 +1,14 @@
 {
   "manifest_version": 3,
   "name": "Tab and Bookmark Manager",
-  "version": "1.0",
+  "version": "1.1",
   "description": "Manage tabs and bookmarks from a single popup.",
   "permissions": [
     "tabs",
     "bookmarks",
     "history",
-    "sessions"
+    "sessions",
+    "search"
   ],
   "action": {
     "default_popup": "popup.html"

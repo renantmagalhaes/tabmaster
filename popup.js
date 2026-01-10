@@ -169,8 +169,14 @@ document.addEventListener('DOMContentLoaded', function() {
       addActive(visibleItems);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      if (currentFocus > -1) {
+      if (currentFocus > -1 && visibleItems.length > 0) {
         visibleItems[currentFocus].click();
+      } else {
+        const query = searchInput.value.trim();
+        if (query) {
+          handleInputEnter(query);
+          window.close();
+        }
       }
     }
   });
@@ -202,4 +208,25 @@ document.addEventListener('DOMContentLoaded', function() {
   fetchBookmarks();
   fetchHistory('');
   fetchClosedTabs();
+
+  function handleInputEnter(query) {
+    if (isUrl(query)) {
+      let url = query;
+      if (!/^https?:\/\//i.test(url)) {
+        url = 'https://' + url;
+      }
+      chrome.tabs.create({ url: url });
+    } else {
+      chrome.search.query({ text: query, disposition: 'NEW_TAB' });
+    }
+  }
+
+  function isUrl(string) {
+    try {
+      new URL(string);
+      return true;
+    } catch (_) {
+      return !/\s/.test(string) && /\./.test(string) && !/^\./.test(string) && !/\.$/.test(string);
+    }
+  }
 });

@@ -13,7 +13,9 @@ Search, filter, and quickly switch between your open tabs, bookmarks, history, a
   - Bookmarks
   - History
   - Recently closed tabs
-- 🎯 Full keyboard navigation (arrow keys + enter)
+- � **Omnibox Address Bar**: Type a URL (e.g., `google.com`) and hit Enter to open it directly if no item is selected.
+- 🔎 **Default Search Engine**: Type any text that isn't a URL, and it will search using your default browser engine.
+- �🎯 Full keyboard navigation (arrow keys + enter)
 - 🖱️ Unified scrollbar for smooth navigation
 - 📌 Sticky headers to visually separate categories
 - 🧩 Lightweight — built with vanilla JS + Fuse.js
