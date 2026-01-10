@@ -264,10 +264,10 @@ document.addEventListener('DOMContentLoaded', function() {
     popupWidth: 600,
     popupHeight: 400,
     fuzziness: 0.3,
-    bgColor: '#333333',
-    textColor: '#ffffff',
-    accentColor: '#00bcd4',
-    itemBgColor: '#444444'
+    bgColor: '#18181b',
+    textColor: '#f4f4f5',
+    accentColor: '#3b82f6',
+    itemBgColor: '#27272a'
   };
 
   // Toggle Panel

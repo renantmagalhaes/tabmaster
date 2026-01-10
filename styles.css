@@ -1,9 +1,9 @@
 :root {
-  --bg-color: #333333;
-  --text-color: #ffffff;
-  --accent-color: #00bcd4;
-  --item-hover-color: #555555;
-  --item-bg-color: #444444;
+  --bg-color: #18181b;
+  --text-color: #f4f4f5;
+  --accent-color: #3b82f6;
+  --item-hover-color: #3f3f46;
+  --item-bg-color: #27272a;
   --popup-width: 600px;
   --popup-height: 400px;
 }
