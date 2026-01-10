@@ -63,39 +63,19 @@ Now you can open the popup instantly without clicking the extension icon.
 ---
 ## ⚙️ Customization
 
+**No coding required!** Click the `⚙️` icon in the popup to open the **Settings Menu**.
+
 ### ✨ Appearance
-
-Edit `styles.css` to adjust:
-
-- Colors, fonts, spacing
-- Popup size via:
-
-```css
-html, body {
-  width: 600px;
-  min-height: 400px;
-}
-```
+- **Popup Size**: Adjust Width (400px–800px) and Height (200px–600px).
+- **Theme**: Customize colors for Background, Text, Accent (Selection), and Items.
+  - _Default_: Modern Dark Mode with Zinc Background & Royal Blue Accent.
 
 ### 🔍 Search Behavior
+- **Fuzziness**: Adjust the slider to make search stricter (0.0) or looser (1.0).
 
-Adjust `popup.js`:
-
-```js
-const options = {
-  keys: ['title', 'url'],
-  threshold: 0.3, // Fuzziness: lower is stricter
-  ...
-};
-```
-
-### 🔢 Results Count
-
-Change how many items appear per category:
-
-```js
-.slice(0, 10) // show first 10 matches
-```
+### 💾 Persistence
+- All settings are saved automatically to your Chrome profile.
+- Use the **"Reset to Defaults"** button to restore the original look instantly.
 
 ---
 
