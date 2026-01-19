@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
     img.style.width = '16px';
     img.style.height = '16px';
     img.style.marginRight = '8px';
-    img.src = isTab ? (item.favIconUrl || 'default-favicon.png') : 'default-favicon.png';
+    img.src = (isTab || item.isClosedTab) ? (item.favIconUrl || 'default-favicon.png') : 'default-favicon.png';
 
     const span = document.createElement('span');
     span.textContent = item.title || item.url;
@@ -45,7 +45,9 @@ document.addEventListener('DOMContentLoaded', function() {
     li.appendChild(span);
 
     li.addEventListener('click', () => {
-      if (isTab) {
+      if (item.isClosedTab) {
+        restoreClosedTab(item.id);
+      } else if (isTab) {
         switchToTab(parseInt(item.id));
       } else {
         openBookmark(item.url);
@@ -64,6 +66,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function openBookmark(url) {
     chrome.tabs.create({ url }, () => {
+      window.close();
+    });
+  }
+
+  function restoreClosedTab(sessionId) {
+    chrome.sessions.restore(sessionId, () => {
       window.close();
     });
   }
@@ -109,11 +117,12 @@ document.addEventListener('DOMContentLoaded', function() {
       closedTabsData = sessions.filter(session => session.tab).map(session => ({
         title: session.tab.title,
         url: session.tab.url,
-        id: session.tab.sessionId,
-        favIconUrl: session.tab.favIconUrl
+        id: session.sessionId,
+        favIconUrl: session.tab.favIconUrl,
+        isClosedTab: true
       }));
       fuseClosedTabs.setCollection(closedTabsData);
-      displayResults(closedTabsList, closedTabsData, true);
+      displayResults(closedTabsList, closedTabsData, false);
     });
   }
 
@@ -126,7 +135,7 @@ document.addEventListener('DOMContentLoaded', function() {
     displayResults(tabsList, filteredTabs, true);
     displayResults(bookmarksList, filteredBookmarks, false);
     displayResults(historyList, filteredHistory, false);
-    displayResults(closedTabsList, filteredClosedTabs, true);
+    displayResults(closedTabsList, filteredClosedTabs, false);
 
     // ✅ Add active to first visible item
     const visibleItems = document.querySelectorAll('#results li:not([style*="display: none"])');
