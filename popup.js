@@ -34,7 +34,31 @@ document.addEventListener('DOMContentLoaded', function() {
     img.style.width = '16px';
     img.style.height = '16px';
     img.style.marginRight = '8px';
-    img.src = (isTab || item.isClosedTab) ? (item.favIconUrl || 'default-favicon.png') : 'default-favicon.png';
+    if (isTab || item.isClosedTab) {
+      img.src = item.favIconUrl || 'default-favicon.png';
+    } else if (item.url) {
+      // For bookmarks and history, use Google's favicon service (works in Manifest V3)
+      try {
+        const url = new URL(item.url);
+        // Check if it's a standard http/https URL with a hostname
+        if (url.hostname && (url.protocol === 'http:' || url.protocol === 'https:')) {
+          // Use Google's favicon service which works reliably
+          img.src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(url.hostname) + '&sz=16';
+        } else {
+          // For non-standard URLs (like vivaldi://, chrome://, etc.), use default
+          img.src = 'default-favicon.png';
+        }
+      } catch (e) {
+        // Fallback if URL parsing fails (e.g., invalid URLs)
+        img.src = 'default-favicon.png';
+      }
+      // Add error handler as fallback
+      img.onerror = function() {
+        this.src = 'default-favicon.png';
+      };
+    } else {
+      img.src = 'default-favicon.png';
+    }
 
     const span = document.createElement('span');
     span.textContent = item.title || item.url;
@@ -84,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  function fetchBookmarks() {
+  function fetchBookmarks(limitDisplay = false) {
     chrome.bookmarks.getTree(function(bookmarkTreeNodes) {
       const flattenBookmarks = (nodes) => {
         let bookmarks = [];
@@ -100,37 +124,53 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       bookmarksData = flattenBookmarks(bookmarkTreeNodes);
       fuseBookmarks.setCollection(bookmarksData);
-      displayResults(bookmarksList, bookmarksData, false);
+      // Limit display to 10 items when no search query, but keep all for search
+      const displayData = limitDisplay ? bookmarksData.slice(0, 10) : bookmarksData;
+      displayResults(bookmarksList, displayData, false);
     });
   }
 
-  function fetchHistory(query) {
-    chrome.history.search({ text: query, maxResults: 10 }, function(historyItems) {
-      historyData = historyItems.map(item => ({ title: item.title, url: item.url, id: item.id }));
+  function fetchHistory(query, limitDisplay = false) {
+    // Always fetch enough history items for search index (1000 items)
+    // But limit display to 10 items when no search query
+    chrome.history.search({ text: query, maxResults: 1000 }, function(historyItems) {
+      historyData = historyItems.map(item => ({ 
+        title: item.title, 
+        url: item.url, 
+        id: item.id
+      }));
       fuseHistory.setCollection(historyData);
-      displayResults(historyList, historyData, false);
+      // Limit display to 10 items when no search query, but keep all for search
+      const displayData = limitDisplay ? historyData.slice(0, 10) : historyData;
+      displayResults(historyList, displayData, false);
     });
   }
 
-  function fetchClosedTabs() {
-    chrome.sessions.getRecentlyClosed({ maxResults: 10 }, function(sessions) {
-      closedTabsData = sessions.filter(session => session.tab).map(session => ({
+  function fetchClosedTabs(limitDisplay = false) {
+    // Always fetch enough closed tabs for search index (100 items)
+    // But limit display to 10 items when no search query
+    chrome.sessions.getRecentlyClosed({ maxResults: 100 }, function(sessions) {
+      const allClosedTabs = sessions.filter(session => session.tab).map(session => ({
         title: session.tab.title,
         url: session.tab.url,
         id: session.sessionId,
         favIconUrl: session.tab.favIconUrl,
         isClosedTab: true
       }));
+      closedTabsData = allClosedTabs;
       fuseClosedTabs.setCollection(closedTabsData);
-      displayResults(closedTabsList, closedTabsData, false);
+      // Limit display to 10 items when no search query, but keep all for search
+      const displayData = limitDisplay ? closedTabsData.slice(0, 10) : closedTabsData;
+      displayResults(closedTabsList, displayData, false);
     });
   }
 
   function filterResults(query) {
-    const filteredTabs = fuseTabs.search(query).map(result => result.item).slice(0, 10);
-    const filteredBookmarks = fuseBookmarks.search(query).map(result => result.item).slice(0, 10);
-    const filteredHistory = fuseHistory.search(query).map(result => result.item).slice(0, 10);
-    const filteredClosedTabs = fuseClosedTabs.search(query).map(result => result.item).slice(0, 10);
+    // Show all matching results when searching (no limit)
+    const filteredTabs = fuseTabs.search(query).map(result => result.item);
+    const filteredBookmarks = fuseBookmarks.search(query).map(result => result.item);
+    const filteredHistory = fuseHistory.search(query).map(result => result.item);
+    const filteredClosedTabs = fuseClosedTabs.search(query).map(result => result.item);
 
     displayResults(tabsList, filteredTabs, true);
     displayResults(bookmarksList, filteredBookmarks, false);
@@ -160,9 +200,9 @@ document.addEventListener('DOMContentLoaded', function() {
       filterResults(query);
     } else {
       fetchTabs();
-      fetchBookmarks();
-      fetchHistory('');
-      fetchClosedTabs();
+      fetchBookmarks(true); // Limit display to 10, but all bookmarks are indexed
+      fetchHistory('', true); // Limit display to 10, but fetch 1000 for index
+      fetchClosedTabs(true); // Limit display to 10, but fetch 100 for index
 
       setTimeout(selectFirstItem, 50); // optional fallback
     }
@@ -214,9 +254,9 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   fetchTabs();
-  fetchBookmarks();
-  fetchHistory('');
-  fetchClosedTabs();
+  fetchBookmarks(true); // Limit to 10 for initial display
+  fetchHistory('', true); // Limit to 10 for initial display
+  fetchClosedTabs(true); // Limit to 10 for initial display
 
   function handleInputEnter(query) {
     if (isUrl(query)) {
