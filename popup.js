@@ -10,6 +10,17 @@ document.addEventListener('DOMContentLoaded', function() {
   let bookmarksData = [];
   let historyData = [];
   let closedTabsData = [];
+  
+  // Track if data has been loaded (for lazy loading)
+  let historyLoaded = false;
+  let closedTabsLoaded = false;
+  
+  // Debounce timer for search input
+  let searchDebounceTimer = null;
+  
+  // Maximum data size limits for memory management
+  const MAX_HISTORY_ITEMS = 5000;
+  const MAX_CLOSED_TABS_ITEMS = 500;
 
   const options = {
     keys: ['title', 'url'],
@@ -82,90 +93,175 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function switchToTab(tabId) {
-    chrome.tabs.update(tabId, { active: true }, function(tab) {
-      chrome.windows.update(tab.windowId, { focused: true });
-      window.close();
-    });
+    try {
+      chrome.tabs.update(tabId, { active: true }, function(tab) {
+        if (chrome.runtime.lastError) {
+          console.error('Error switching to tab:', chrome.runtime.lastError.message);
+          return;
+        }
+        if (tab) {
+          chrome.windows.update(tab.windowId, { focused: true }, function() {
+            if (chrome.runtime.lastError) {
+              console.error('Error focusing window:', chrome.runtime.lastError.message);
+            }
+            window.close();
+          });
+        }
+      });
+    } catch (error) {
+      console.error('Error in switchToTab:', error);
+    }
   }
 
   function openBookmark(url) {
-    chrome.tabs.create({ url }, () => {
-      window.close();
-    });
+    try {
+      chrome.tabs.create({ url }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Error opening bookmark:', chrome.runtime.lastError.message);
+          return;
+        }
+        window.close();
+      });
+    } catch (error) {
+      console.error('Error in openBookmark:', error);
+    }
   }
 
   function restoreClosedTab(sessionId) {
-    chrome.sessions.restore(sessionId, () => {
-      window.close();
-    });
+    try {
+      chrome.sessions.restore(sessionId, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Error restoring closed tab:', chrome.runtime.lastError.message);
+          return;
+        }
+        window.close();
+      });
+    } catch (error) {
+      console.error('Error in restoreClosedTab:', error);
+    }
   }
 
   function fetchTabs() {
-    chrome.tabs.query({}, function(tabs) {
-      tabsData = tabs.map(tab => ({ title: tab.title, url: tab.url, id: tab.id, favIconUrl: tab.favIconUrl }));
-      fuseTabs.setCollection(tabsData);
-      displayResults(tabsList, tabsData, true);
-    });
+    try {
+      chrome.tabs.query({}, function(tabs) {
+        if (chrome.runtime.lastError) {
+          console.error('Error fetching tabs:', chrome.runtime.lastError.message);
+          return;
+        }
+        tabsData = tabs.map(tab => ({ title: tab.title, url: tab.url, id: tab.id, favIconUrl: tab.favIconUrl }));
+        fuseTabs.setCollection(tabsData);
+        displayResults(tabsList, tabsData, true);
+      });
+    } catch (error) {
+      console.error('Error in fetchTabs:', error);
+    }
   }
 
   function fetchBookmarks(limitDisplay = false) {
-    chrome.bookmarks.getTree(function(bookmarkTreeNodes) {
-      const flattenBookmarks = (nodes) => {
-        let bookmarks = [];
-        for (let node of nodes) {
-          if (node.url) {
-            bookmarks.push({ title: node.title, url: node.url, id: node.id });
-          }
-          if (node.children) {
-            bookmarks = bookmarks.concat(flattenBookmarks(node.children));
-          }
+    try {
+      chrome.bookmarks.getTree(function(bookmarkTreeNodes) {
+        if (chrome.runtime.lastError) {
+          console.error('Error fetching bookmarks:', chrome.runtime.lastError.message);
+          return;
         }
-        return bookmarks;
-      };
-      bookmarksData = flattenBookmarks(bookmarkTreeNodes);
-      fuseBookmarks.setCollection(bookmarksData);
-      // Limit display to 10 items when no search query, but keep all for search
-      const displayData = limitDisplay ? bookmarksData.slice(0, 10) : bookmarksData;
-      displayResults(bookmarksList, displayData, false);
-    });
+        const flattenBookmarks = (nodes) => {
+          let bookmarks = [];
+          for (let node of nodes) {
+            if (node.url) {
+              bookmarks.push({ title: node.title, url: node.url, id: node.id });
+            }
+            if (node.children) {
+              bookmarks = bookmarks.concat(flattenBookmarks(node.children));
+            }
+          }
+          return bookmarks;
+        };
+        bookmarksData = flattenBookmarks(bookmarkTreeNodes);
+        fuseBookmarks.setCollection(bookmarksData);
+        // Limit display to 10 items when no search query, but keep all for search
+        const displayData = limitDisplay ? bookmarksData.slice(0, 10) : bookmarksData;
+        displayResults(bookmarksList, displayData, false);
+      });
+    } catch (error) {
+      console.error('Error in fetchBookmarks:', error);
+    }
   }
 
   function fetchHistory(query, limitDisplay = false) {
-    // Always fetch enough history items for search index (1000 items)
-    // But limit display to 10 items when no search query
-    chrome.history.search({ text: query, maxResults: 1000 }, function(historyItems) {
-      historyData = historyItems.map(item => ({ 
-        title: item.title, 
-        url: item.url, 
-        id: item.id
-      }));
-      fuseHistory.setCollection(historyData);
-      // Limit display to 10 items when no search query, but keep all for search
-      const displayData = limitDisplay ? historyData.slice(0, 10) : historyData;
-      displayResults(historyList, displayData, false);
-    });
+    try {
+      // Always fetch enough history items for search index (1000 items)
+      // But limit display to 10 items when no search query
+      chrome.history.search({ text: query, maxResults: 1000 }, function(historyItems) {
+        if (chrome.runtime.lastError) {
+          console.error('Error fetching history:', chrome.runtime.lastError.message);
+          return;
+        }
+        historyData = historyItems.map(item => ({ 
+          title: item.title, 
+          url: item.url, 
+          id: item.id
+        }));
+        
+        // Memory management: limit array size if it grows too large
+        if (historyData.length > MAX_HISTORY_ITEMS) {
+          historyData = historyData.slice(0, MAX_HISTORY_ITEMS);
+        }
+        
+        fuseHistory.setCollection(historyData);
+        historyLoaded = true;
+        
+        // Limit display to 10 items when no search query, but keep all for search
+        const displayData = limitDisplay ? historyData.slice(0, 10) : historyData;
+        displayResults(historyList, displayData, false);
+      });
+    } catch (error) {
+      console.error('Error in fetchHistory:', error);
+    }
   }
 
   function fetchClosedTabs(limitDisplay = false) {
-    // Always fetch enough closed tabs for search index (100 items)
-    // But limit display to 10 items when no search query
-    chrome.sessions.getRecentlyClosed({ maxResults: 100 }, function(sessions) {
-      const allClosedTabs = sessions.filter(session => session.tab).map(session => ({
-        title: session.tab.title,
-        url: session.tab.url,
-        id: session.sessionId,
-        favIconUrl: session.tab.favIconUrl,
-        isClosedTab: true
-      }));
-      closedTabsData = allClosedTabs;
-      fuseClosedTabs.setCollection(closedTabsData);
-      // Limit display to 10 items when no search query, but keep all for search
-      const displayData = limitDisplay ? closedTabsData.slice(0, 10) : closedTabsData;
-      displayResults(closedTabsList, displayData, false);
-    });
+    try {
+      // Always fetch enough closed tabs for search index (100 items)
+      // But limit display to 10 items when no search query
+      chrome.sessions.getRecentlyClosed({ maxResults: 100 }, function(sessions) {
+        if (chrome.runtime.lastError) {
+          console.error('Error fetching closed tabs:', chrome.runtime.lastError.message);
+          return;
+        }
+        const allClosedTabs = sessions.filter(session => session.tab).map(session => ({
+          title: session.tab.title,
+          url: session.tab.url,
+          id: session.sessionId,
+          favIconUrl: session.tab.favIconUrl,
+          isClosedTab: true
+        }));
+        
+        // Memory management: limit array size if it grows too large
+        closedTabsData = allClosedTabs.length > MAX_CLOSED_TABS_ITEMS 
+          ? allClosedTabs.slice(0, MAX_CLOSED_TABS_ITEMS) 
+          : allClosedTabs;
+        
+        fuseClosedTabs.setCollection(closedTabsData);
+        closedTabsLoaded = true;
+        
+        // Limit display to 10 items when no search query, but keep all for search
+        const displayData = limitDisplay ? closedTabsData.slice(0, 10) : closedTabsData;
+        displayResults(closedTabsList, displayData, false);
+      });
+    } catch (error) {
+      console.error('Error in fetchClosedTabs:', error);
+    }
   }
 
   function filterResults(query) {
+    // Lazy load history and closed tabs if not already loaded
+    if (!historyLoaded) {
+      fetchHistory('', false);
+    }
+    if (!closedTabsLoaded) {
+      fetchClosedTabs(false);
+    }
+    
     // Show all matching results when searching (no limit)
     const filteredTabs = fuseTabs.search(query).map(result => result.item);
     const filteredBookmarks = fuseBookmarks.search(query).map(result => result.item);
@@ -196,16 +292,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
   searchInput.addEventListener('input', () => {
     const query = searchInput.value;
-    if (query) {
-      filterResults(query);
-    } else {
-      fetchTabs();
-      fetchBookmarks(true); // Limit display to 10, but all bookmarks are indexed
-      fetchHistory('', true); // Limit display to 10, but fetch 1000 for index
-      fetchClosedTabs(true); // Limit display to 10, but fetch 100 for index
-
-      setTimeout(selectFirstItem, 50); // optional fallback
+    
+    // Clear previous debounce timer
+    if (searchDebounceTimer) {
+      clearTimeout(searchDebounceTimer);
     }
+    
+    // Debounce search to improve performance (150ms delay)
+    searchDebounceTimer = setTimeout(() => {
+      if (query) {
+        filterResults(query);
+      } else {
+        fetchTabs();
+        fetchBookmarks(true); // Limit display to 10, but all bookmarks are indexed
+        // Lazy load history and closed tabs only when needed (on first search or when clearing search)
+        // This improves initial popup load time
+        if (historyLoaded) {
+          fetchHistory('', true); // Only refetch if already loaded
+        }
+        if (closedTabsLoaded) {
+          fetchClosedTabs(true); // Only refetch if already loaded
+        }
+
+        setTimeout(selectFirstItem, 50); // optional fallback
+      }
+    }, 150);
   });
 
   searchInput.addEventListener('keydown', (e) => {
@@ -255,18 +366,30 @@ document.addEventListener('DOMContentLoaded', function() {
 
   fetchTabs();
   fetchBookmarks(true); // Limit to 10 for initial display
-  fetchHistory('', true); // Limit to 10 for initial display
-  fetchClosedTabs(true); // Limit to 10 for initial display
+  // Lazy load history and closed tabs - only load when user searches
+  // This improves initial popup load time significantly
 
   function handleInputEnter(query) {
-    if (isUrl(query)) {
-      let url = query;
-      if (!/^https?:\/\//i.test(url)) {
-        url = 'https://' + url;
+    try {
+      if (isUrl(query)) {
+        let url = query;
+        if (!/^https?:\/\//i.test(url)) {
+          url = 'https://' + url;
+        }
+        chrome.tabs.create({ url: url }, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error creating tab:', chrome.runtime.lastError.message);
+          }
+        });
+      } else {
+        chrome.search.query({ text: query, disposition: 'NEW_TAB' }, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error performing search:', chrome.runtime.lastError.message);
+          }
+        });
       }
-      chrome.tabs.create({ url: url });
-    } else {
-      chrome.search.query({ text: query, disposition: 'NEW_TAB' });
+    } catch (error) {
+      console.error('Error in handleInputEnter:', error);
     }
   }
 
@@ -325,10 +448,24 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Load Settings
-  chrome.storage.sync.get(defaultSettings, (settings) => {
-    applySettings(settings);
-    updateInputs(settings);
-  });
+  try {
+    chrome.storage.sync.get(defaultSettings, (settings) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error loading settings:', chrome.runtime.lastError.message);
+        // Use defaults if storage fails
+        applySettings(defaultSettings);
+        updateInputs(defaultSettings);
+        return;
+      }
+      applySettings(settings);
+      updateInputs(settings);
+    });
+  } catch (error) {
+    console.error('Error in storage.get:', error);
+    // Use defaults if storage fails
+    applySettings(defaultSettings);
+    updateInputs(defaultSettings);
+  }
 
   // Apply Changes Live (Preview)
   Object.keys(inputs).forEach(key => {
@@ -378,7 +515,15 @@ document.addEventListener('DOMContentLoaded', function() {
         newSettings[key] = value;
       }
 
-      chrome.storage.sync.set(newSettings);
+      try {
+        chrome.storage.sync.set(newSettings, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error saving settings:', chrome.runtime.lastError.message);
+          }
+        });
+      } catch (error) {
+        console.error('Error in storage.set:', error);
+      }
     });
   });
 
@@ -389,10 +534,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Reset
   btnReset.addEventListener('click', () => {
-    chrome.storage.sync.set(defaultSettings, () => {
-      applySettings(defaultSettings);
-      updateInputs(defaultSettings);
-    });
+    try {
+      chrome.storage.sync.set(defaultSettings, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Error resetting settings:', chrome.runtime.lastError.message);
+          return;
+        }
+        applySettings(defaultSettings);
+        updateInputs(defaultSettings);
+      });
+    } catch (error) {
+      console.error('Error in reset:', error);
+    }
   });
 
   function applySettings(s) {
