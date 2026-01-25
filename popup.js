@@ -23,10 +23,13 @@ document.addEventListener('DOMContentLoaded', function() {
   const MAX_CLOSED_TABS_ITEMS = 500;
 
   const options = {
-    keys: ['title', 'url'],
+    keys: ['title', 'url', 'combined'],
     threshold: 0.3,
     includeScore: true,
-    shouldSort: true
+    shouldSort: true,
+    useExtendedSearch: true,
+    ignoreLocation: true,  // Don't penalize matches based on position
+    distance: 1000  // Allow matches far apart in the combined string
   };
 
   const fuseTabs = new Fuse(tabsData, options);
@@ -148,7 +151,13 @@ document.addEventListener('DOMContentLoaded', function() {
           console.error('Error fetching tabs:', chrome.runtime.lastError.message);
           return;
         }
-        tabsData = tabs.map(tab => ({ title: tab.title, url: tab.url, id: tab.id, favIconUrl: tab.favIconUrl }));
+        tabsData = tabs.map(tab => ({ 
+          title: tab.title, 
+          url: tab.url, 
+          id: tab.id, 
+          favIconUrl: tab.favIconUrl,
+          combined: `${tab.title} ${tab.url}`
+        }));
         fuseTabs.setCollection(tabsData);
         displayResults(tabsList, tabsData, true);
       });
@@ -168,7 +177,12 @@ document.addEventListener('DOMContentLoaded', function() {
           let bookmarks = [];
           for (let node of nodes) {
             if (node.url) {
-              bookmarks.push({ title: node.title, url: node.url, id: node.id });
+              bookmarks.push({ 
+                title: node.title, 
+                url: node.url, 
+                id: node.id,
+                combined: `${node.title} ${node.url}`
+              });
             }
             if (node.children) {
               bookmarks = bookmarks.concat(flattenBookmarks(node.children));
@@ -199,7 +213,8 @@ document.addEventListener('DOMContentLoaded', function() {
         historyData = historyItems.map(item => ({ 
           title: item.title, 
           url: item.url, 
-          id: item.id
+          id: item.id,
+          combined: `${item.title} ${item.url}`
         }));
         
         // Memory management: limit array size if it grows too large
@@ -221,9 +236,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function fetchClosedTabs(limitDisplay = false) {
     try {
-      // Always fetch enough closed tabs for search index (100 items)
+      // Chrome API limit is 25 for maxResults
       // But limit display to 10 items when no search query
-      chrome.sessions.getRecentlyClosed({ maxResults: 100 }, function(sessions) {
+      chrome.sessions.getRecentlyClosed({ maxResults: 25 }, function(sessions) {
         if (chrome.runtime.lastError) {
           console.error('Error fetching closed tabs:', chrome.runtime.lastError.message);
           return;
@@ -233,7 +248,8 @@ document.addEventListener('DOMContentLoaded', function() {
           url: session.tab.url,
           id: session.sessionId,
           favIconUrl: session.tab.favIconUrl,
-          isClosedTab: true
+          isClosedTab: true,
+          combined: `${session.tab.title} ${session.tab.url}`
         }));
         
         // Memory management: limit array size if it grows too large
