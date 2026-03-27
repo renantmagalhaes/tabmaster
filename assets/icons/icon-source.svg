@@ -1,0 +1,36 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="18" y1="12" x2="110" y2="116" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#22C7F2"/>
+      <stop offset="1" stop-color="#2455E6"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(42 24) rotate(38) scale(84)">
+      <stop stop-color="#ECFEFF" stop-opacity="0.5"/>
+      <stop offset="1" stop-color="#ECFEFF" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="glass" x1="64" y1="64" x2="95" y2="96" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7DD3FC"/>
+      <stop offset="1" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#bg)"/>
+  <rect x="8" y="8" width="112" height="112" rx="28" fill="url(#glow)"/>
+
+  <g transform="translate(0 4)">
+    <rect x="32" y="32" width="42" height="32" rx="9" fill="#BFE5FF" fill-opacity="0.7"/>
+    <path d="M38 29C38 26.7909 39.7909 25 42 25H74C76.2091 25 78 26.7909 78 29V38H38V29Z" fill="#DDF2FF" fill-opacity="0.9"/>
+
+    <rect x="24" y="42" width="52" height="40" rx="10" fill="#F8FCFF"/>
+    <path d="M30 38C30 34.6863 32.6863 32 36 32H70C73.3137 32 76 34.6863 76 38V48H30V38Z" fill="#FFFFFF"/>
+    <circle cx="40" cy="40" r="3.5" fill="#2962FF"/>
+    <circle cx="50" cy="40" r="3.5" fill="#8EA3C7"/>
+    <rect x="57" y="35.5" width="12" height="8" rx="4" fill="#D7EAFE"/>
+
+    <rect x="34" y="57" width="24" height="5" rx="2.5" fill="#D8E9FF"/>
+    <rect x="34" y="66" width="18" height="5" rx="2.5" fill="#C3DBFF"/>
+
+    <circle cx="74" cy="72" r="16" stroke="url(#glass)" stroke-width="8"/>
+    <path d="M84.5 82.5L96 94" stroke="url(#glass)" stroke-width="8" stroke-linecap="round"/>
+  </g>
+</svg>

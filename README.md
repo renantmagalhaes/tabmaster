@@ -22,7 +22,7 @@ Search, filter, and quickly switch between your open tabs, bookmarks, history, a
 
 > Inspired by **Vivaldi's Quick Command Panel**, but portable and customizable!
 
-![alt text](./images/demo.png)
+![alt text](./assets/images/demo.png)
 
 ---
 
@@ -58,7 +58,7 @@ To open TabMaster quickly:
 
 Now you can open the popup instantly without clicking the extension icon.
 
-![alt text](./images/shortcut.png)
+![alt text](./assets/images/shortcut.png)
 
 ---
 ## ⚙️ Customization
@@ -84,6 +84,21 @@ Now you can open the popup instantly without clicking the extension icon.
 - HTML/CSS/JS
 - [Fuse.js](https://fusejs.io/) for fuzzy search
 - Chrome Extensions API (Manifest V3)
+
+## 📁 Project Structure
+
+```text
+tabmaster/
+├── assets/
+│   ├── icons/
+│   └── images/
+├── docs/
+├── src/
+│   └── popup/
+├── vendor/
+├── manifest.json
+└── README.md
+```
 
 ---
 

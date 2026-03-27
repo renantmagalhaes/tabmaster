@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+  const DEFAULT_FAVICON = chrome.runtime.getURL('assets/icons/icon16.png');
   const searchInput = document.getElementById('search');
   const tabsList = document.getElementById('tabs');
   const bookmarksList = document.getElementById('bookmarks');
@@ -49,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
     img.style.height = '16px';
     img.style.marginRight = '8px';
     if (isTab || item.isClosedTab) {
-      img.src = item.favIconUrl || 'default-favicon.png';
+      img.src = item.favIconUrl || DEFAULT_FAVICON;
     } else if (item.url) {
       // For bookmarks and history, use Google's favicon service (works in Manifest V3)
       try {
@@ -60,18 +61,18 @@ document.addEventListener('DOMContentLoaded', function() {
           img.src = 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(url.hostname) + '&sz=16';
         } else {
           // For non-standard URLs (like vivaldi://, chrome://, etc.), use default
-          img.src = 'default-favicon.png';
+          img.src = DEFAULT_FAVICON;
         }
       } catch (e) {
         // Fallback if URL parsing fails (e.g., invalid URLs)
-        img.src = 'default-favicon.png';
+        img.src = DEFAULT_FAVICON;
       }
       // Add error handler as fallback
       img.onerror = function() {
-        this.src = 'default-favicon.png';
+        this.src = DEFAULT_FAVICON;
       };
     } else {
-      img.src = 'default-favicon.png';
+      img.src = DEFAULT_FAVICON;
     }
 
     const span = document.createElement('span');
