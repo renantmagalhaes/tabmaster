@@ -40,15 +40,36 @@ document.addEventListener('DOMContentLoaded', function() {
 
   searchInput.focus();
 
-  function createListItem(item, isTab) {
+  function getItemBadgeLabel(item, isTab, list) {
+    if (item.isClosedTab) return 'Closed';
+    if (isTab) return 'Tab';
+    if (list === bookmarksList) return 'Bookmark';
+    if (list === historyList) return 'History';
+    return 'Item';
+  }
+
+  function getMetaText(item) {
+    if (!item.url) return 'No URL';
+
+    try {
+      const url = new URL(item.url);
+      if (!url.hostname) {
+        return url.protocol.replace(':', '');
+      }
+
+      const path = url.pathname && url.pathname !== '/' ? url.pathname : '';
+      return `${url.hostname}${path}`.replace(/\/$/, '');
+    } catch (error) {
+      return item.url;
+    }
+  }
+
+  function createListItem(item, isTab, list) {
     const li = document.createElement('li');
-    li.style.display = 'block';
+    li.className = 'result-item';
 
     const img = document.createElement('img');
     img.alt = '';
-    img.style.width = '16px';
-    img.style.height = '16px';
-    img.style.marginRight = '8px';
     if (isTab || item.isClosedTab) {
       img.src = item.favIconUrl || DEFAULT_FAVICON;
     } else if (item.url) {
@@ -75,13 +96,33 @@ document.addEventListener('DOMContentLoaded', function() {
       img.src = DEFAULT_FAVICON;
     }
 
-    const span = document.createElement('span');
-    span.textContent = item.title || item.url;
+    const iconShell = document.createElement('div');
+    iconShell.className = 'result-icon-shell';
+    iconShell.appendChild(img);
+
+    const body = document.createElement('div');
+    body.className = 'result-body';
+
+    const title = document.createElement('span');
+    title.className = 'result-title';
+    title.textContent = item.title || item.url || 'Untitled';
+
+    const meta = document.createElement('span');
+    meta.className = 'result-meta';
+    meta.textContent = getMetaText(item);
+
+    body.appendChild(title);
+    body.appendChild(meta);
+
+    const badge = document.createElement('span');
+    badge.className = 'result-badge';
+    badge.textContent = getItemBadgeLabel(item, isTab, list);
 
     li.dataset.url = item.url;
     li.dataset.id = item.id;
-    li.appendChild(img);
-    li.appendChild(span);
+    li.appendChild(iconShell);
+    li.appendChild(body);
+    li.appendChild(badge);
 
     li.addEventListener('click', () => {
       if (item.isClosedTab) {
@@ -302,8 +343,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function displayResults(list, items, isTab) {
     list.innerHTML = '';
+    const heading = list.previousElementSibling;
+
+    heading.hidden = items.length === 0;
+    list.hidden = items.length === 0;
+
     items.forEach(item => {
-      list.appendChild(createListItem(item, isTab));
+      list.appendChild(createListItem(item, isTab, list));
     });
   }
 
@@ -410,14 +456,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function isUrl(string) {
-    try {
-      new URL(string);
-      return true;
-    } catch (_) {
-      return !/\s/.test(string) && /\./.test(string) && !/^\./.test(string) && !/\.$/.test(string);
-    }
-  }
   function isUrl(string) {
     try {
       new URL(string);
