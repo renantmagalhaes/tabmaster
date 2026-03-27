@@ -1,0 +1,45 @@
+# Node modules and dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables - NEVER commit tokens!
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Build artifacts
+dist/
+build/
+*.zip
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Production builds
+*.prod.js
+
+# Extension package files
+*.crx
+*.pem
