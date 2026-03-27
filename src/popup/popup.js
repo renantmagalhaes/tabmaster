@@ -493,10 +493,10 @@ document.addEventListener('DOMContentLoaded', function() {
     popupWidth: 600,
     popupHeight: MAX_POPUP_HEIGHT,
     fuzziness: 0.3,
-    bgColor: '#18181b',
-    textColor: '#f4f4f5',
-    accentColor: '#3b82f6',
-    itemBgColor: '#27272a'
+    bgColor: '#1a2230',
+    textColor: '#eff4ff',
+    accentColor: '#6ea8ff',
+    itemBgColor: '#2a3449'
   };
 
   // Toggle Panel
