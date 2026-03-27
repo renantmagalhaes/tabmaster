@@ -449,9 +449,11 @@ document.addEventListener('DOMContentLoaded', function() {
     fuzziness: document.getElementById('val-fuzziness')
   };
 
+  const MAX_POPUP_HEIGHT = 600;
+
   const defaultSettings = {
     popupWidth: 600,
-    popupHeight: 400,
+    popupHeight: MAX_POPUP_HEIGHT,
     fuzziness: 0.3,
     bgColor: '#18181b',
     textColor: '#f4f4f5',
@@ -476,6 +478,18 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       applySettings(settings);
       updateInputs(settings);
+
+      // Migrate the previous built-in default height to the current maximum.
+      if (settings.popupHeight === 400) {
+        const migratedSettings = { ...settings, popupHeight: MAX_POPUP_HEIGHT };
+        applySettings(migratedSettings);
+        updateInputs(migratedSettings);
+        chrome.storage.sync.set({ popupHeight: MAX_POPUP_HEIGHT }, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error migrating popup height:', chrome.runtime.lastError.message);
+          }
+        });
+      }
     });
   } catch (error) {
     console.error('Error in storage.get:', error);
